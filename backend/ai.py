@@ -1,11 +1,24 @@
 import os, json
 from groq import Groq
-from openai import OpenAI
+from google import genai
 from dotenv import load_dotenv
+
 load_dotenv()
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
-openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+# openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+def embed(text: str) -> list[float]:
+    response = client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=text,
+        config={
+                'task_type': 'RETRIEVAL_DOCUMENT',
+                'title': 'Embedding for search'
+            }
+    )
+    return response.embeddings[0].values
 
 SUMMARISE_SYSTEM = """You are a personal knowledge assistant. Return ONLY a JSON object with keys:
   "title"   — short descriptive title, max 8 words

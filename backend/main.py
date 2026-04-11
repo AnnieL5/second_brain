@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from ai import summarise, embed
 import db
 
 app = FastAPI()
@@ -16,15 +17,29 @@ class SearchRequest(BaseModel):
 # --- Routes ---
 
 @app.post("/store")
-def store(req: StoreRequest):
-    result = db.save_entry(req.raw_text, req.tags)
-    return {
-        "id": result["id"],
-        "title": "",
-        "summary": req.raw_text,  # no AI yet, just echo back
-        "tags": req.tags,
-        "created_at": result["created_at"]
-    }
+@app.post("/store")
+async def store(data: dict):
+    raw_text = data["raw_text"]
+    user_tags = data.get("tags", [])
+
+    # 1. Ask AI to summarise
+    result = summarise(raw_text)
+
+    # 2. Merge user tags with AI-suggested tags (no duplicates)
+    all_tags = list(set(user_tags + result["tags"]))
+
+    # 3. Turn the summary into a vector
+    vector = embed(result["summary"])
+
+    # 4. Save everything to the database
+    entry = save_entry(
+        raw_text=raw_text,
+        summary=result["summary"],
+        title=result["title"],
+        tags=all_tags,
+        embedding=vector,
+    )
+    return entry
 
 @app.post("/search")
 def search(req: SearchRequest):
@@ -42,3 +57,4 @@ def delete(entry_id: int):
     if not success:
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"deleted": True}
+

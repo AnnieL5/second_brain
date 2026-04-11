@@ -7,12 +7,12 @@ load_dotenv()
 def get_conn():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
-def save_entry(raw_text: str, tags: list[str]) -> dict:
+def save_entry(raw_text: str, title:str, summary:str, tags: list[str], embedding:list[float]) -> dict:
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO entries (raw_text, title, summary, tags) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
-        (raw_text, "", "", tags)
+        "INSERT INTO entries (raw_text, title, summary, tags, embedding) VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at",
+        (raw_text, title, summary, tags, embedding)
     )
     row = cur.fetchone()
     conn.commit()
