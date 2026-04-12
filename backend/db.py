@@ -45,3 +45,25 @@ def delete_entry(entry_id: int) -> bool:
     cur.close()
     conn.close()
     return deleted
+
+def search(query_embedding: list, limit: int = 5, tags: list = None) -> list:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            if tags:
+                cur.execute("""
+                    SELECT id, title, summary, tags,
+                           1 - (embedding <=> %s::vector) AS score
+                    FROM entries
+                    WHERE tags && %s
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                """, (query_embedding, tags, query_embedding, limit))
+            else:
+                cur.execute("""
+                    SELECT id, title, summary, tags,
+                           1 - (embedding <=> %s::vector) AS score
+                    FROM entries
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                """, (query_embedding, query_embedding, limit))
+            return cur.fetchall()

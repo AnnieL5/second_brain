@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from ai import summarise, embed
 import db
+from db import save_entry, search
 
 app = FastAPI()
 
@@ -16,7 +17,6 @@ class SearchRequest(BaseModel):
 
 # --- Routes ---
 
-@app.post("/store")
 @app.post("/store")
 async def store(data: dict):
     raw_text = data["raw_text"]
@@ -42,10 +42,17 @@ async def store(data: dict):
     return entry
 
 @app.post("/search")
-def search(req: SearchRequest):
-    # Phase 1: just return all entries (no vector search yet)
-    entries = db.list_entries(limit=req.limit)
-    return {"results": entries}
+async def search_entries(data: dict):
+    query = data["query"]
+    limit = data.get("limit", 5)
+    tags = data.get("tags", None)
+
+    # Turn the search query into a vector
+    query_vector = embed(query)
+
+    # Find closest matches in the database
+    results = search(query_vector, limit=limit, tags=tags)
+    return {"results": results}
 
 @app.get("/entries")
 def get_entries(page: int = 1, limit: int = 20):

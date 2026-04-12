@@ -18,7 +18,7 @@ cur.execute("""
         summary     TEXT         NOT NULL DEFAULT '',
         title       TEXT         NOT NULL DEFAULT '',
         tags        TEXT[]       NOT NULL DEFAULT '{}',
-        embedding   vector(3072) NOT NULL,
+        embedding   vector(3072),
         created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     );
 """)
