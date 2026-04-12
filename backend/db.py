@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -48,7 +49,7 @@ def delete_entry(entry_id: int) -> bool:
 
 def search(query_embedding: list, limit: int = 5, tags: list = None) -> list:
     with get_conn() as conn:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             if tags:
                 cur.execute("""
                     SELECT id, title, summary, tags,

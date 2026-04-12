@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from ai import summarise, embed
+from ai import summarise, embed, answer as ai_answer
 import db
 from db import save_entry, search
 
@@ -44,15 +44,24 @@ async def store(data: dict):
 @app.post("/search")
 async def search_entries(data: dict):
     query = data["query"]
+    mode = data.get("mode", "find")   # "find" or "ask"
     limit = data.get("limit", 5)
     tags = data.get("tags", None)
 
-    # Turn the search query into a vector
+    # Always embed and search first
     query_vector = embed(query)
-
-    # Find closest matches in the database
     results = search(query_vector, limit=limit, tags=tags)
-    return {"results": results}
+
+    if mode == "ask":
+        # Synthesise an answer from the top results
+        synthesised = ai_answer(query, results)
+        return {
+            "answer": synthesised,
+            "sources": [{"id": r["id"], "title": r["title"], "summary": r["summary"], "score": r["score"]} for r in results]
+        }
+    else:
+        # Just return the ranked list
+        return {"results": results}
 
 @app.get("/entries")
 def get_entries(page: int = 1, limit: int = 20):
