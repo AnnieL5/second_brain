@@ -4,13 +4,15 @@ from ai import summarise, embed, answer as ai_answer
 import db
 from db import save_entry, search
 
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173"],  # your frontend's address
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -19,6 +21,7 @@ app.add_middleware(
 class StoreRequest(BaseModel):
     raw_text: str
     tags: list[str] = []
+    folder_id: int | None = None
 
 class SearchRequest(BaseModel):
     query: str
@@ -35,9 +38,10 @@ class MoveEntry(BaseModel):
 # --- Routes ---
 
 @app.post("/store")
-async def store(data: dict):
-    raw_text = data["raw_text"]
-    user_tags = data.get("tags", [])
+async def store(data: StoreRequest):
+    raw_text = data.raw_text
+    user_tags = data.tags
+    folder_id = data.folder_id
 
     # 1. Ask AI to summarise
     result = summarise(raw_text)
@@ -55,6 +59,7 @@ async def store(data: dict):
         title=result["title"],
         tags=all_tags,
         embedding=vector,
+        folder_id=folder_id,
     )
     return entry
 

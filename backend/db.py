@@ -12,18 +12,20 @@ def save_entry(raw_text: str, title:str, summary:str, tags: list[str], embedding
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO entries (raw_text, title, summary, tags, embedding) VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at",
-        (raw_text, title, summary, tags, embedding)
+        "INSERT INTO entries (raw_text, title, summary, tags, embedding, folder_id) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, title, summary, tags, created_at, folder_id",
+        (raw_text, title, summary, tags, embedding, folder_id)
     )
     row = cur.fetchone()
     conn.commit()
     cur.close()
     conn.close()
-    return {"id": row[0], "created_at": row[1]}
-
+    return {
+        "id": row[0], "title": row[1], "summary": row[2],
+        "tags": row[3], "created_at": row[4], "folder_id": row[5]
+    }
 def list_entries(page: int = 1, limit: int = 20, tag: str = None, 
                  sort: str = "newest", folder_id: int = None) -> list:
-    conn = get_connection()
+    conn = get_conn()
     cur = conn.cursor()
     
     conditions = []
@@ -105,7 +107,7 @@ def create_folder(name: str) -> dict:
 
 
 def list_folders() -> list:
-    conn = get_connection()
+    conn = get_conn()
     cur = conn.cursor()
     # Also counts how many entries are in each folder
     cur.execute("""
@@ -125,7 +127,7 @@ def list_folders() -> list:
 
 
 def delete_folder(folder_id: int):
-    conn = get_connection()
+    conn = get_conn()
     cur = conn.cursor()
     # Notes in this folder become unfoldered (folder_id becomes NULL)
     cur.execute("DELETE FROM folders WHERE id = %s", (folder_id,))
@@ -135,7 +137,7 @@ def delete_folder(folder_id: int):
 
 
 def move_entry_to_folder(entry_id: int, folder_id: int | None):
-    conn = get_connection()
+    conn = get_conn()
     cur = conn.cursor()
     cur.execute(
         "UPDATE entries SET folder_id = %s WHERE id = %s",

@@ -1,41 +1,80 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Sidebar from "./Sidebar";
 import StoreTab from "./StoreTab";
 import SearchTab from "./SearchTab";
 import LibraryTab from "./LibraryTab";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("store");
+  const [activeView, setActiveView] = useState("add");
+  const [folders, setFolders] = useState([]);
+  const [activeFolderId, setActiveFolderId] = useState(null);
+  const [clearSignal, setClearSignal] = useState(0); // increments to trigger clear
 
+  // Load folders on startup
+  useEffect(() => {
+    fetchFolders();
+  }, []);
+
+  async function fetchFolders() {
+    const res = await fetch("/folders");
+    const data = await res.json();
+    setFolders(data);
+  }
+
+  async function handleNewFolder(name) {
+    await fetch("/folders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    fetchFolders(); // refresh the list
+  }
+
+  async function handleDeleteFolder(id) {
+    await fetch(`/folders/${id}`, { method: "DELETE" });
+    if (activeFolderId === id) setActiveFolderId(null);
+    fetchFolders();
+  }
+
+  function handleClear() {
+    setClearSignal(s => s + 1); // child components watch this number
+  }
   return (
-    <div style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px", fontFamily: "sans-serif" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>🧠 Second Brain</h1>
-      <p style={{ color: "#888", marginBottom: 20 }}>Paste anything. Find anything. Ask anything.</p>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#111", color: "#eee" }}>
 
-      {/* Tab buttons */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {["store", "search", "library"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "8px 20px",
-              borderRadius: 8,
-              border: "none",
-              cursor: "pointer",
-              fontWeight: activeTab === tab ? 600 : 400,
-              background: activeTab === tab ? "#6c63ff" : "#eee",
-              color: activeTab === tab ? "#fff" : "#333",
-            }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+      <Sidebar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        folders={folders}
+        activeFolderId={activeFolderId}
+        setActiveFolderId={setActiveFolderId}
+        onNewFolder={handleNewFolder}
+        onDeleteFolder={handleDeleteFolder}
+        onClear={handleClear}
+      />
+
+      {/* Main content panel */}
+      <div style={{ flex: 1, padding: "32px", maxWidth: "800px" }}>
+        {activeView === "add" && (
+          <StoreTab
+            folders={folders}
+            onClearSignal={clearSignal}
+            onStoreDone={fetchFolders} // refresh counts after saving
+          />
+        )}
+        {activeView === "ask" && (
+          <SearchTab onClearSignal={clearSignal} />
+        )}
+        {activeView === "library" && (
+          <LibraryTab
+            activeFolderId={activeFolderId}
+            folders={folders}
+            onClearSignal={clearSignal}
+            onEntryDeleted={fetchFolders}
+          />
+        )}
       </div>
 
-      {/* Show the right tab */}
-      {activeTab === "store"   && <StoreTab />}
-      {activeTab === "search"  && <SearchTab />}
-      {activeTab === "library" && <LibraryTab />}
     </div>
   );
 }

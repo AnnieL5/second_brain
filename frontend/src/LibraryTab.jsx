@@ -3,69 +3,89 @@ import axios from "axios";
 
 const API = "http://localhost:8000";
 
-export default function LibraryTab() {
-  const [entries, setEntries]       = useState([]);
-  const [total, setTotal]           = useState(0);
-  const [page, setPage]             = useState(1);
-  const [search, setSearch]         = useState("");
-  const [sort, setSort]             = useState("newest");
-  const [expanded, setExpanded]     = useState({});  // which cards show raw text
+export default function LibraryTab({ activeFolderId, folders = [], onClearSignal, onEntryDeleted }) {
+  const [entries, setEntries]   = useState([]);
+  const [total, setTotal]       = useState(0);
+  const [page, setPage]         = useState(1);
+  const [search, setSearch]     = useState("");
+  const [sort, setSort]         = useState("newest");
+  const [expanded, setExpanded] = useState({});
   const limit = 10;
 
-  // Load entries whenever page/sort changes
+  // Re-fetch when folder changes, page changes, sort changes, or clear is triggered
   useEffect(() => {
     loadEntries();
-  }, [page, sort]);
+  }, [page, sort, activeFolderId, onClearSignal]);
+
+  // Reset to page 1 when folder changes
+  useEffect(() => {
+    setPage(1);
+    setSearch("");
+  }, [activeFolderId, onClearSignal]);
 
   async function loadEntries() {
     try {
-        const res = await axios.get(`${API}/entries`, {
-        params: { page, limit, sort }
-        });
+      const params = { page, limit, sort };
+      if (activeFolderId) params.folder_id = activeFolderId;
 
-        // Handle whatever shape the backend returns
-        const data = res.data;
-        if (Array.isArray(data)) {
+      const res = await axios.get(`${API}/entries`, { params });
+      const data = res.data;
+
+      if (Array.isArray(data)) {
         setEntries(data);
         setTotal(data.length);
-        } else if (data && Array.isArray(data.entries)) {
+      } else if (data && Array.isArray(data.entries)) {
         setEntries(data.entries);
         setTotal(data.total ?? data.entries.length);
-        } else {
+      } else {
         setEntries([]);
         setTotal(0);
-        }
+      }
     } catch (err) {
-        console.error("Failed to load entries:", err);
-        setEntries([]);
-        setTotal(0);
+      console.error("Failed to load entries:", err);
+      setEntries([]);
+      setTotal(0);
     }
-    }
+  }
 
   async function handleDelete(id) {
     if (!confirm("Delete this entry?")) return;
     await axios.delete(`${API}/entries/${id}`);
     loadEntries();
+    if (onEntryDeleted) onEntryDeleted(); // refresh folder counts in sidebar
+  }
+
+  async function handleMoveFolder(entryId, newFolderId) {
+    await axios.patch(`${API}/entries/${entryId}/folder`, {
+      folder_id: newFolderId ? Number(newFolderId) : null
+    });
+    loadEntries();
+    if (onEntryDeleted) onEntryDeleted(); // reuse this to refresh sidebar counts
   }
 
   function toggleRaw(id) {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   }
 
-  // Client-side filter by search keyword
   const filtered = entries.filter(e =>
-    !search || e.title.toLowerCase().includes(search.toLowerCase()) ||
+    !search ||
+    e.title.toLowerCase().includes(search.toLowerCase()) ||
     e.tags.some(t => t.includes(search.toLowerCase()))
   );
 
   const totalPages = Math.ceil(total / limit);
-
-  // Count unique tags
   const allTags = [...new Set((entries ?? []).flatMap(e => e.tags ?? []))];
+
+  // Find the active folder name for the heading
+  const activeFolderName = activeFolderId
+    ? folders.find(f => f.id === activeFolderId)?.name
+    : null;
 
   return (
     <div>
-      <h2 style={{ fontSize: 18, marginBottom: 4 }}>Library</h2>
+      <h2 style={{ fontSize: 18, marginBottom: 4 }}>
+        {activeFolderName ? `📁 ${activeFolderName}` : "Library"}
+      </h2>
 
       {/* Stat bar */}
       <p style={{ color: "#888", marginBottom: 16, fontSize: 13 }}>
@@ -94,20 +114,45 @@ export default function LibraryTab() {
       {/* Entry cards */}
       {filtered.map(entry => (
         <div key={entry.id} style={{ padding: 16, background: "#f9f9f9", borderRadius: 12, marginBottom: 12, border: "1px solid #e0e0e0" }}>
+          
+          {/* Title + date */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <span style={{ fontWeight: 600, fontSize: 15 }}>{entry.title}</span>
             <span style={{ color: "#aaa", fontSize: 12 }}>{new Date(entry.created_at).toLocaleDateString()}</span>
           </div>
+
+          {/* Summary */}
           <p style={{ margin: "0 0 8px", fontSize: 14, color: "#555" }}>{entry.summary}</p>
 
           {/* Tags */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
             {entry.tags.map(t => (
-              <span key={t} style={{ background: "#e0ddff", padding: "2px 10px", borderRadius: 20, fontSize: 12, color: "#5a50d4" }}>{t}</span>
+              <span key={t} style={{ background: "#e0ddff", padding: "2px 10px", borderRadius: 20, fontSize: 12, color: "#5a50d4" }}>
+                {t}
+              </span>
             ))}
           </div>
 
-          {/* Show raw text if expanded */}
+          {/* Folder badge + move dropdown */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            {entry.folder_id && (
+              <span style={{ fontSize: 11, background: "#2d2d5e", color: "#a78bfa", padding: "2px 8px", borderRadius: 12 }}>
+                📁 {folders.find(f => f.id === entry.folder_id)?.name ?? "Unknown"}
+              </span>
+            )}
+            <select
+              value={entry.folder_id ?? ""}
+              onChange={e => handleMoveFolder(entry.id, e.target.value || null)}
+              style={{ fontSize: 12, background: "#f0f0f0", color: "#555", border: "1px solid #ddd", borderRadius: 6, padding: "2px 6px", cursor: "pointer" }}
+            >
+              <option value="">No folder</option>
+              {folders.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Raw text if expanded */}
           {expanded[entry.id] && (
             <pre style={{ background: "#eee", padding: 10, borderRadius: 8, fontSize: 13, whiteSpace: "pre-wrap", marginBottom: 8 }}>
               {entry.raw_text}
@@ -123,6 +168,7 @@ export default function LibraryTab() {
               Delete
             </button>
           </div>
+
         </div>
       ))}
 

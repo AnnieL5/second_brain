@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 const API = "http://localhost:8000";
 
-export default function StoreTab() {
+export default function StoreTab({ folders, onClearSignal }) {
   const [text, setText]       = useState("");
   const [tags, setTags]       = useState("");
   const [preview, setPreview] = useState(null);   // holds the AI summary before saving
   const [loading, setLoading] = useState(false);
   const [saved, setSaved]     = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
+
+  // Clear when the sidebar Clear button is pressed
+  useEffect(() => {
+    setText("");
+    setTags([]);
+    setSelectedFolderId(null);
+    setPreview(null);
+  }, [onClearSignal]); // onClearSignal is a number that increments on clear
 
   // Step 1: send text to /store, get back AI summary
   async function handleSubmit() {
@@ -18,7 +27,7 @@ export default function StoreTab() {
     setPreview(null);
     try {
       const tagList = tags.split(",").map(t => t.trim()).filter(Boolean);
-      const res = await axios.post(`${API}/store`, { raw_text: text, tags: tagList });
+      const res = await axios.post(`${API}/store`, { raw_text: text, tags: tagList, folder_id: selectedFolderId });
       setPreview(res.data);   // show the title, summary, tags the AI made
     } catch (err) {
       alert("Error: " + err.message);
@@ -53,6 +62,24 @@ export default function StoreTab() {
         placeholder="Tags (comma separated): coding, ideas, health"
         style={{ width: "100%", marginTop: 8, padding: 10, borderRadius: 8, border: "1px solid #ccc", fontSize: 14, boxSizing: "border-box" }}
       />
+
+      <div style={{ margin: "12px 0" }}>
+        <label style={{ fontSize: "13px", color: "#888" }}>Folder</label>
+        <select
+          value={selectedFolderId ?? ""}
+          onChange={e => setSelectedFolderId(e.target.value ? Number(e.target.value) : null)}
+          style={{
+            display: "block", marginTop: "6px", padding: "8px",
+            borderRadius: "8px", border: "1px solid #333",
+            background: "#1a1a1a", color: "#eee", width: "100%"
+          }}
+        >
+          <option value="">No folder</option>
+          {folders.map(f => (
+            <option key={f.id} value={f.id}>{f.name}</option>
+          ))}
+        </select>
+      </div>
 
       <button
         onClick={handleSubmit}
