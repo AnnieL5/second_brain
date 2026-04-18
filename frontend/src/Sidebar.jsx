@@ -117,6 +117,7 @@ function NavItem({ icon, label, active, onClick }) {
 const styles = {
   sidebar: {
     width: "220px",
+    overflowY: "auto",
     minHeight: "100vh",
     background: "#1a1a2e",
     color: "#eee",

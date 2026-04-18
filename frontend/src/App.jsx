@@ -40,7 +40,7 @@ export default function App() {
     setClearSignal(s => s + 1); // child components watch this number
   }
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#111", color: "#eee" }}>
+    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", minHeight: "100vh", background: "#111", color: "#eee" }}>
 
       <Sidebar
         activeView={activeView}
@@ -54,7 +54,7 @@ export default function App() {
       />
 
       {/* Main content panel */}
-      <div style={{ flex: 1, padding: "32px", maxWidth: "800px" }}>
+      <div style={{ flex: 1, padding: "32px", height: "100vh", overflowY: "auto" }}>
         {activeView === "add" && (
           <StoreTab
             folders={folders}

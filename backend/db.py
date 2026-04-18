@@ -8,7 +8,7 @@ load_dotenv()
 def get_conn():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
-def save_entry(raw_text: str, title:str, summary:str, tags: list[str], embedding:list[float]) -> dict:
+def save_entry(raw_text: str, title:str, summary:str, tags: list[str], embedding:list[float], folder_id: int) -> dict:
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(

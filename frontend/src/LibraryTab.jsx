@@ -117,12 +117,12 @@ export default function LibraryTab({ activeFolderId, folders = [], onClearSignal
           
           {/* Title + date */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontWeight: 600, fontSize: 15 }}>{entry.title}</span>
+            <span style={{ color: "#787878", fontWeight: 600, fontSize: 15 }}>{entry.title}</span>
             <span style={{ color: "#aaa", fontSize: 12 }}>{new Date(entry.created_at).toLocaleDateString()}</span>
           </div>
 
           {/* Summary */}
-          <p style={{ margin: "0 0 8px", fontSize: 14, color: "#555" }}>{entry.summary}</p>
+          <p style={{ margin: "0 0 8px", textAlign: 'left', fontSize: 14, color: "#555" }}>{entry.summary}</p>
 
           {/* Tags */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
