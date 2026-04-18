@@ -21,6 +21,20 @@ cur.execute("""
         embedding   vector(3072),
         created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
     );
+    
+""")
+
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS folders (
+        id         SERIAL PRIMARY KEY,
+        name       TEXT NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+""")
+
+cur.execute("""
+    ALTER TABLE entries 
+    ADD COLUMN IF NOT EXISTS folder_id INT REFERENCES folders(id) ON DELETE SET NULL;
 """)
 
 conn.commit()
