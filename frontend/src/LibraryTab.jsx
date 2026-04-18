@@ -61,7 +61,7 @@ export default function LibraryTab({ activeFolderId, folders = [], onClearSignal
     });
     loadEntries();
     if (onEntryDeleted) onEntryDeleted(); // reuse this to refresh sidebar counts
-  }
+  } 
 
   function toggleRaw(id) {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
