@@ -74,8 +74,8 @@ async def search_entries(data: dict):
         return {"results": results}
 
 @app.get("/entries")
-def get_entries(page: int = 1, limit: int = 20):
-    return db.list_entries(page=page, limit=limit)
+def get_entries(page: int = 1, limit: int = 20, sort: str = "newest"):
+    return db.list_entries(page=page, limit=limit, sort=sort)
 
 @app.delete("/entries/{entry_id}")
 def delete(entry_id: int):

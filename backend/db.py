@@ -21,12 +21,13 @@ def save_entry(raw_text: str, title:str, summary:str, tags: list[str], embedding
     conn.close()
     return {"id": row[0], "created_at": row[1]}
 
-def list_entries(page: int = 1, limit: int = 20) -> list[dict]:
+def list_entries(page: int = 1, limit: int = 20, sort: str = "newest") -> list[dict]:
     conn = get_conn()
     cur = conn.cursor()
     offset = (page - 1) * limit
+    order = "ASC" if sort == "oldest" else "DESC"
     cur.execute(
-        "SELECT id, raw_text, title, summary, tags, created_at FROM entries ORDER BY created_at DESC LIMIT %s OFFSET %s",
+        f"SELECT id, raw_text, title, summary, tags, created_at FROM entries ORDER BY created_at {order} LIMIT %s OFFSET %s",
         (limit, offset)
     )
     rows = cur.fetchall()
@@ -36,7 +37,7 @@ def list_entries(page: int = 1, limit: int = 20) -> list[dict]:
         {"id": r[0], "raw_text": r[1], "title": r[2], "summary": r[3], "tags": r[4], "created_at": r[5]}
         for r in rows
     ]
-
+    
 def delete_entry(entry_id: int) -> bool:
     conn = get_conn()
     cur = conn.cursor()

@@ -86,7 +86,7 @@ export default function App() {
     <div style={{
       display: "flex", minHeight: "100vh",
       background: paper.bg, fontFamily: "'Segoe UI', system-ui, sans-serif",
-      color: paper.text,
+      color: paper.text, overflow: "hidden",
     }}>
 
       {/* ── SIDEBAR ── */}
@@ -172,7 +172,7 @@ export default function App() {
             />
 
             {/* Tag chips */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, overflowY: "auto" }}>
               {visibleTags.length === 0 && (
                 <span style={{ fontSize: 12, color: paper.muted }}>No tags yet</span>
               )}
@@ -249,7 +249,7 @@ export default function App() {
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, padding: "32px 40px", boxSizing: "border-box" }}>
+      <main style={{ flex: 1, padding: "32px 40px", overflowY: "auto", boxSizing: "border-box" }}>
         {activeTab === "store"   && <StoreTab onSaved={fetchEntries} />}
         {activeTab === "search"  && <SearchTab />}
         {activeTab === "library" && (

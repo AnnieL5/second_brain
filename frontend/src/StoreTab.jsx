@@ -67,10 +67,16 @@ export default function StoreTab() {
       {/* Preview card — shows AI result before saving */}
       {preview && (
         <div style={{ marginTop: 20, padding: 16, background: "#f5f5ff", borderRadius: 12, border: "1px solid #c5c0ff" }}>
+          <p style={{ margin: "0 0 4px", fontWeight: 600 }}>Done!</p>
+        </div>
+      )}
+
+      {/* {preview && (
+        <div style={{ marginTop: 20, padding: 16, background: "#f5f5ff", borderRadius: 12, border: "1px solid #c5c0ff" }}>
           <p style={{ margin: "0 0 4px", fontWeight: 600 }}>📌 {preview.title}</p>
           <p style={{ margin: "0 0 8px", color: "#444", fontSize: 14 }}>{preview.summary}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-            {preview.tags.map(t => (
+            {(preview.tags ?? []).map(t => (
               <span key={t} style={{ background: "#e0ddff", padding: "2px 10px", borderRadius: 20, fontSize: 12 }}>{t}</span>
             ))}
           </div>
@@ -83,7 +89,7 @@ export default function StoreTab() {
             </button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
