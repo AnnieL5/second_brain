@@ -26,11 +26,11 @@ class SearchRequest(BaseModel):
 
 # --- New models ---
 
-class FolderCreate(BaseModel):
-    name: str
+# class FolderCreate(BaseModel):
+#     name: str
 
-class MoveEntry(BaseModel):
-    folder_id: int | None  # None means "remove from folder"
+# class MoveEntry(BaseModel):
+#     folder_id: int | None  # None means "remove from folder"
     
 # --- Routes ---
 
@@ -80,21 +80,25 @@ async def search_entries(data: dict):
         # Just return the ranked list
         return {"results": results}
     
-@app.post("/folders")
-def create_folder(body: FolderCreate):
-    try:
-        return db.create_folder(body.name)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# @app.post("/folders")
+# def create_folder(body: FolderCreate):
+#     try:
+#         return db.create_folder(body.name)
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/entries")
-def get_entries(page: int = 1, limit: int = 20, tag: str = None,
-                sort: str = "newest", folder_id: int = None):
-    return db.list_entries(page, limit, tag, sort, folder_id)
+def get_entries(page: int = 1, limit: int = 20):
+    return db.list_entries(page=page, limit=limit)
 
-@app.get("/folders")
-def get_folders():
-    return db.list_folders()
+# @app.get("/entries")
+# def get_entries(page: int = 1, limit: int = 20, tag: str = None,
+#                 sort: str = "newest", folder_id: int = None):
+#     return db.list_entries(page, limit, tag, sort, folder_id)
+
+# @app.get("/folders")
+# def get_folders():
+#     return db.list_folders()
 
 @app.delete("/entries/{entry_id}")
 def delete(entry_id: int):
@@ -103,13 +107,13 @@ def delete(entry_id: int):
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"deleted": True}
 
-@app.delete("/folders/{folder_id}")
-def remove_folder(folder_id: int):
-    db.delete_folder(folder_id)
-    return {"ok": True}
+# @app.delete("/folders/{folder_id}")
+# def remove_folder(folder_id: int):
+#     db.delete_folder(folder_id)
+#     return {"ok": True}
 
-@app.patch("/entries/{entry_id}/folder")
-def move_to_folder(entry_id: int, body: MoveEntry):
-    db.move_entry_to_folder(entry_id, body.folder_id)
-    return {"ok": True}
+# @app.patch("/entries/{entry_id}/folder")
+# def move_to_folder(entry_id: int, body: MoveEntry):
+#     db.move_entry_to_folder(entry_id, body.folder_id)
+#     return {"ok": True}
 
